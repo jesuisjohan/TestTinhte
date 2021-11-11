@@ -1,3 +1,5 @@
+import time
+
 import tinhte.constants as const
 import os
 from selenium import webdriver
@@ -5,6 +7,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
 
 
 class Tinhte(webdriver.Chrome):
@@ -55,7 +58,9 @@ class Tinhte(webdriver.Chrome):
     def change_password(self, current_password, new_password,
                         fill_current_password=True,
                         fill_new_password=True,
-                        fill_confirm_password=True):
+                        fill_confirm_password=True,
+                        expected_to_have_error=False,
+                        fill_wrong_confirm_password=False):
         self.implicitly_wait(const.WAIT_TIME)
         self.click_burger_menu()
         menu_options = self.find_elements_by_css_selector(
@@ -78,7 +83,12 @@ class Tinhte(webdriver.Chrome):
         if fill_confirm_password:
             confirm_password_field = self.find_element_by_id('ctrl_password_confirm')
             confirm_password_field.clear()
-            confirm_password_field.send_keys(new_password)
+
+            if fill_wrong_confirm_password:
+                wrong_confirm_password = new_password + "1"
+                confirm_password_field.send_keys(wrong_confirm_password)
+            else:
+                confirm_password_field.send_keys(new_password)
 
         save_change_button = self.find_element_by_xpath(
             "/html[@id='XenForo']/body/div[@class='js-uix_panels uix_panels']/div[@class='mainPanelWrapper']/div["
@@ -90,6 +100,18 @@ class Tinhte(webdriver.Chrome):
         )
         save_change_button.click()
 
+        self.implicitly_wait(5)
+        error_popup = self.find_elements_by_css_selector(
+            'div[class="errorOverlay"]'
+        )
+
+        has_error_popup = (len(error_popup) != 0)
+
+        if has_error_popup == expected_to_have_error:
+            print("Testcase Passed!")
+        else:
+            print("Testcase Failed!")
+
     '''
     create new article on tinhte.vn homepage
     require login
@@ -98,8 +120,8 @@ class Tinhte(webdriver.Chrome):
                            fill_text=True,
                            insert_link=True,
                            upload_image=True,
-                           upload_many_images=True):
-        self.land_first_page()
+                           upload_many_images=True,):
+        #self.land_first_page()
         self.implicitly_wait(const.WAIT_TIME)
         create_new_article_button = self.find_element_by_css_selector(
             'button[class="jsx-659482973 blue-switch header-mode"]'
@@ -118,8 +140,10 @@ class Tinhte(webdriver.Chrome):
             if upload_many_images:
                 self.upload_many_images()
 
+        time.sleep(5)
+
         post_article_button = self.find_element_by_xpath(
-            "//button[contains(.,'Đăng Bài')]"
+            '//button[normalize-space()="Đăng Bài"]'
         )
         post_article_button.click()
 
@@ -132,7 +156,8 @@ class Tinhte(webdriver.Chrome):
                         upload_image=True,
                         upload_many_images=True):
 
-        self.land_first_page()
+        # self.land_first_page()
+        self.implicitly_wait(const.WAIT_TIME)
         create_new_article_button = self.find_element_by_css_selector(
             'button[class="jsx-659482973 blue-switch header-mode"]'
         )
@@ -150,6 +175,7 @@ class Tinhte(webdriver.Chrome):
             if upload_many_images:
                 self.upload_many_images()
 
+        time.sleep(5)
         post_article_button = self.find_element_by_xpath(
             "//button[contains(.,'Đăng Bài')]"
         )
